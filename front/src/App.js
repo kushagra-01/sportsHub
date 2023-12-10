@@ -34,7 +34,7 @@ function App() {
   const handleCustomerSubmit = (e) => {
     e.preventDefault();
 
-    axios.post('http://localhost:3000/customer', customerData)
+    axios.post('https://sports-a5na.onrender.com/customer', customerData)
       .then(({ data }) => {
         const customerId = data._id;
 
@@ -58,7 +58,7 @@ function App() {
         alert('Login First');
         return
       }
-      const response = await axios.post('http://localhost:3000/booking/short', shortBookingData);
+      const response = await axios.post('https://sports-a5na.onrender.com/booking/short', shortBookingData);
       console.log('Short-term booking created:', response.data);
       alert('Short-term booking created')
     } catch (error) {
@@ -76,7 +76,7 @@ function App() {
         alert('Login First');
         return
       }
-      const response = await axios.post('http://localhost:3000/booking/long-term', longBookingData);
+      const response = await axios.post('https://sports-a5na.onrender.com/booking/long-term', longBookingData);
       console.log('Long-term booking created:', response.data);
       alert('Long-term booking created')
     } catch (error) {
@@ -97,7 +97,7 @@ function App() {
       return
     }
     alert('slots available shown')
-    axios.post('http://localhost:3000/getAvailableSlots', {
+    axios.post('https://sports-a5na.onrender.com/getAvailableSlots', {
       "fieldType": shortBookingData.fieldType,
       "date": shortBookingData.date
 
@@ -120,7 +120,7 @@ function App() {
       }
 
       const token = '';
-      const response = await axios.get(`http://localhost:3000/customer/${shortBookingData.customerId}/bookings`, {
+      const response = await axios.get(`https://sports-a5na.onrender.com/customer/${shortBookingData.customerId}/bookings`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setbookingDeatails(response.data)
