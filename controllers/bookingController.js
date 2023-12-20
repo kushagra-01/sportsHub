@@ -1,84 +1,49 @@
-const express = require('express');
-const router = express.Router();
 const Booking = require('../models/Booking');
 const Customer = require('../models/Customer');
 
-
-
-
-
-
-
-
-router.post('/customer', async (req, res) => {
-   
+exports.getAvailableSlots = async (req, res) => {
     try {
-        const { name, email } = req.body;
+        const { fieldType, date } = req.body;
 
-        // Check if customer already exists
-        let customer = await Customer.findOne({ email });
+        // Check if there are existing bookings for the given date and field type
+        const existingBookings = await Booking.find({
+            date,
+            fieldType,
+        });
 
-        if (!customer) {
-            // If customer doesn't exist, create a new one
-            customer = new Customer({ name, email });
-            await customer.save();
-        }
+        // Get all slots for the day
+        const allSlots = Array.from({ length: 48 }, (_, i) => i); // Assuming each slot is 30 minutes
 
-        res.status(200).json(customer);
+        // Filter out booked slots
+        const bookedSlots = existingBookings.reduce((slots, booking) => {
+            const bookingStart =
+                parseInt(booking.Starttiming.split(':')[0]) * 2 +
+                parseInt(booking.Starttiming.split(':')[1]) / 30;
+            const bookingEnd =
+                parseInt(booking.endTiming.split(':')[0]) * 2 +
+                parseInt(booking.endTiming.split(':')[1]) / 30;
+            return [...slots, ...Array.from({ length: bookingEnd - bookingStart }, (_, i) => bookingStart + i)];
+        }, []);
+
+        // Convert available slots to time format
+        const availableSlots = allSlots
+            .filter((slot) => !bookedSlots.includes(slot))
+            .map((slot) => {
+                const hours = Math.floor(slot / 2);
+                const minutes = (slot % 2) * 30;
+                return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+            });
+
+        res.status(200).json({
+            availableSlots,
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
-});
-
-
-
-const convertSlotToTime = (slot) => {
-    const hours = Math.floor(slot / 2);
-    const minutes = slot % 2 === 0 ? '00' : '30';
-    return `${hours}:${minutes}`;
 };
 
-router.post('/getAvailableSlots', async (req, res) => {
-    try {
-      const { fieldType, date } = req.body;
-  
-      // Check if there are existing bookings for the given date and field type
-      const existingBookings = await Booking.find({
-        date,
-        fieldType,
-      });
-  
-      // Get all slots for the day
-      const allSlots = Array.from({ length: 48 }, (_, i) => i); // Assuming each slot is 30 minutes
-  
-      // Filter out booked slots
-      const bookedSlots = existingBookings.reduce((slots, booking) => {
-        const bookingStart = parseInt(booking.Starttiming.split(':')[0]) * 2 + parseInt(booking.Starttiming.split(':')[1]) / 30;
-        const bookingEnd = parseInt(booking.endTiming.split(':')[0]) * 2 + parseInt(booking.endTiming.split(':')[1]) / 30;
-        return [...slots, ...Array.from({ length: bookingEnd - bookingStart }, (_, i) => bookingStart + i)];
-      }, []);
-  
-      // Convert available slots to time format
-      const availableSlots = allSlots
-        .filter((slot) => !bookedSlots.includes(slot))
-        .map(slot => {
-          const hours = Math.floor(slot / 2);
-          const minutes = (slot % 2) * 30;
-          return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-        });
-  
-      res.status(200).json({
-        availableSlots,
-      });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'Internal Server Error' });
-    }
-  });
-
-
-router.get('/customer/:customerId/bookings', async (req, res) => {
+exports.getCustomerBookings = async (req, res) => {
     try {
         const customerId = req.params.customerId;
 
@@ -88,21 +53,19 @@ router.get('/customer/:customerId/bookings', async (req, res) => {
         // Find both past and upcoming bookings for the customer
         const bookings = await Booking.find({ customerId });
 
-        const pastBookings = bookings.filter(booking => booking.date < currentDate );
-        const upcomingBookings = bookings.filter(booking => booking.date >= currentDate);
+        const pastBookings = bookings.filter((booking) => booking.date < currentDate);
+        const upcomingBookings = bookings.filter((booking) => booking.date >= currentDate);
 
-        const LongTermBooking = bookings.filter(booking => booking.isLongTerm ==true);
+        const LongTermBooking = bookings.filter((booking) => booking.isLongTerm == true);
 
-        res.status(200).json({ pastBookings, upcomingBookings,LongTermBooking });
+        res.status(200).json({ pastBookings, upcomingBookings, LongTermBooking });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
-});
+};
 
-
-
-router.post('/booking/short', async (req, res) => {
+exports.createShortTermBooking = async (req, res) => {
     try {
         const { customerId, fieldType, date, slotsBooked, Starttiming } = req.body;
 
@@ -143,9 +106,6 @@ router.post('/booking/short', async (req, res) => {
             });
         }
 
-
-
-     
         const newBooking = new Booking({
             customerId,
             fieldType,
@@ -161,10 +121,9 @@ router.post('/booking/short', async (req, res) => {
         console.error(error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
-});
+};
 
-// Route for long-term bookings
-router.post('/booking/long-term', async (req, res) => {
+exports.createLongTermBooking = async (req, res) => {
     try {
         const { customerId, fieldType, date, slotsBooked, Starttiming, longTermStartDate, longTermEndDate } = req.body;
 
@@ -172,12 +131,7 @@ router.post('/booking/long-term', async (req, res) => {
         const customer = await Customer.findById(customerId);
         if (!customer) {
             return res.status(404).json({ error: 'Customer not found' });
-
         }
-
-
-
-
 
         const startDate = new Date(longTermStartDate);
         const endDate = new Date(longTermEndDate);
@@ -188,7 +142,6 @@ router.post('/booking/long-term', async (req, res) => {
             });
         }
 
-        // Create long-term booking
         const newBooking = new Booking({
             customerId,
             fieldType,
@@ -207,16 +160,4 @@ router.post('/booking/long-term', async (req, res) => {
         console.error(error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
-});
-
-
-
-
-
-
-
-
-
-
-
-module.exports = router;
+};
