@@ -34,7 +34,7 @@ const Main = () => {
                 return;
             }
 
-            const response = await axios.post('https://sports-a5na.onrender.com/booking/short', shortBookingData);
+            const response = await axios.post('https://sports-a5na.onrender.com/api/booking/short', shortBookingData);
             console.log('Short-term booking created:', response.data);
             alert('Short-term booking created');
             getSuggestSlots()
@@ -55,7 +55,7 @@ const Main = () => {
                 return;
             }
 
-            const response = await axios.post('https://sports-a5na.onrender.com/booking/long-term', longBookingData);
+            const response = await axios.post('https://sports-a5na.onrender.com/api/booking/long-term', longBookingData);
             console.log('Long-term booking created:', response.data);
             alert('Long-term booking created');
             handleGetDetails()
@@ -79,7 +79,7 @@ const Main = () => {
 
         try {
           
-            const { data } = await axios.post('https://sports-a5na.onrender.com/getAvailableSlots', {
+            const { data } = await axios.post('https://sports-a5na.onrender.com/api/getAvailableSlots', {
                 fieldType: shortBookingData.fieldType,
                 date: shortBookingData.date,
             });
@@ -99,7 +99,7 @@ const Main = () => {
             }
 
             const token = ''; // Replace with your actual token
-            const response = await axios.get(`https://sports-a5na.onrender.com/customer/${customerId}/bookings`, {
+            const response = await axios.get(`https://sports-a5na.onrender.com/api/customer/${customerId}/bookings`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setBookingDetails(response.data);
