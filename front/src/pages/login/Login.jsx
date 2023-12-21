@@ -14,7 +14,7 @@ const navigate = useNavigate()
   const handleCustomerSubmit = (e) => {
     e.preventDefault();
 
-    axios.post('https://sports-a5na.onrender.com/customer', customerData)
+    axios.post('https://sports-a5na.onrender.com/api/customer', customerData)
       .then(({ data }) => {
         const customerId = data._id;
         localStorage.setItem('customerId', customerId);
